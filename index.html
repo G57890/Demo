@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Image Upload & Teachable Machine</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        margin-top: 20px;
+      }
+      #image-display {
+        max-width: 500px;
+        margin-top: 20px;
+      }
+      #label-container {
+        margin-top: 20px;
+        font-size: 40px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Upload Image</h1>
+    <input type="file" id="image-input" accept="image/*" />
+    <img id="image-display" alt="Uploaded Image" />
+
+    <hr />
+    <button type="button" id="predict-button">Scan</button>
+    <div id="label-container"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest/dist/teachablemachine-image.min.js"></script>
+    <script type="text/javascript">
+      const URL = "https://teachablemachine.withgoogle.com/models/bftsjXtOq/";
+      let model, labelContainer, maxPredictions;
+
+      async function init() {
+        const modelURL = URL + "model.json";
+        const metadataURL = URL + "metadata.json";
+
+        model = await tmImage.load(modelURL, metadataURL);
+        maxPredictions = model.getTotalClasses();
+        labelContainer = document.getElementById("label-container");
+      }
+
+      async function predict(imageElement) {
+        const predictions = await model.predict(imageElement);
+        labelContainer.innerHTML = ""; // Clear previous results
+
+        predictions.forEach((prediction) => {
+          if (prediction.probability >= 0.7) {
+            const predictionElement = document.createElement("div");
+            predictionElement.innerHTML = `${prediction.className}`; // Only show the class name
+            labelContainer.appendChild(predictionElement);
+          }
+        });
+      }
+
+      document
+        .getElementById("predict-button")
+        .addEventListener("click", function () {
+          const imageElement = document.getElementById("image-display");
+          if (imageElement.src) {
+            predict(imageElement);
+          } else {
+            alert("Please upload an image first.");
+          }
+        });
+
+      const imageInput = document.getElementById("image-input");
+      const imageDisplay = document.getElementById("image-display");
+
+      imageInput.addEventListener("change", function () {
+        const file = imageInput.files[0];
+        if (file) {
+          const reader = new FileReader();
+          reader.onload = function (e) {
+            imageDisplay.src = e.target.result;
+          };
+          reader.readAsDataURL(file);
+        }
+      });
+
+      init();
+    </script>
+  </body>
+</html>
